@@ -1,0 +1,120 @@
+<html>
+    <head>
+        <title>Bounty Calculator</title>
+        <style>
+            .container {
+                margin: 1em;
+            }
+        </style>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    </head>
+
+    <body>
+
+        <fieldset class=container>
+            <legend>Inputs</legend>
+
+            <div class=container>
+                <label for="bountyMax">$b_{max}$ - Program's maximum bounty amount.</label>
+                <input type="number" id="bountyMax" min=0 value="2000">
+            </div>
+
+            <div class=container>
+                <label for="cvssScore">$C$ - CVSS score.</label>
+                <input type="number" id="cvssScore" value="5" min=0 max=10 step="0.1">
+            </div>
+
+            <div class=container>
+                <label for="exponent">$n$ - Exponent.</label>
+                <input type="number" id="exponent" value="2" min=1 step="1">
+            </div>
+        </fieldset>
+
+        <div class=container>
+            Bounty amount:
+            <span id=calcOutput>$0</span>
+        </div>
+
+        <div class=container>
+            Plot:
+            <div id="plot" style="width:650px;height:450px;"></div>
+        </div>
+
+        <div class=container>
+            Table:
+            <table id="bountyTable" border=1></table>
+        </div>
+    
+    </body>
+    <script>
+    
+        (function(){
+
+
+            var bountyMax = document.getElementById('bountyMax');
+            var cvssScore = document.getElementById('cvssScore');
+            var exponent = document.getElementById('exponent');
+
+            var plot = document.getElementById('plot');
+            var calcOutput = document.getElementById('calcOutput');
+            var bountyTable = document.getElementById('bountyTable');
+
+            var formula = function(bMax, cvss, exp) {
+                var cMax = 10;
+
+                var N = bMax / Math.pow(cMax, exp);
+                return N * Math.pow(cvss, exp);
+            };
+
+            (function update() {
+
+                calcOutput.innerText = '$' + formula(bountyMax.value, cvssScore.value, exponent.value);
+                
+                // The CVSS scores we want to calculate the bounty for
+                var scores = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+                
+                // A place to store the results
+                var bounties = [];
+                
+                // Populate the bounites array with the results
+                for (i = 0; i < scores.length; i++) {
+                    var score = scores[i];
+                    var b = formula(bountyMax.value, score, exponent.value);
+                    bounties[i] = b;
+                }
+
+                Plotly.newPlot(
+                    plot,
+                    [{x: scores, y: bounties}],
+                    { margin: { t: 0 } }
+                );
+
+                // Table data
+                var columnHeaders = ['CVSS Score', 'Bounty Amount'];
+                var columns = [scores, bounties];
+                
+                // Insert the headings
+                bountyTable.innerHTML = "";
+                var row = bountyTable.insertRow(0);
+                for (var i = 0; i < columnHeaders.length; i++) {
+                    var headerCell = document.createElement("th");
+                    headerCell.innerText = columnHeaders[i];
+                    row.appendChild(headerCell);
+                }
+
+                // Insert the values
+                for (var i = 1; i < scores.length; i++) {
+                    var row = bountyTable.insertRow(i);
+
+                    for (var j = 0; j < columns.length; j++){
+                        row.insertCell(j).innerText = columns[j][i];
+                    }
+                }
+
+                window.requestAnimationFrame(update);
+            })();
+
+        })();
+
+    </script>
+</html>
